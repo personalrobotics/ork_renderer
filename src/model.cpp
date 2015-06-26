@@ -47,6 +47,8 @@ void
 Model::LoadModel(const std::string & file_path)
 {
   scene = aiImportFile(file_path.c_str(), aiProcessPreset_TargetRealtime_Quality);
+  std::cout << "<><><>< DONE LOADING MODEL <><><><><" << std::endl;
+
   recursiveTextureLoad(scene, scene->mRootNode);
 }
 
@@ -73,7 +75,7 @@ Model::recursiveTextureLoad(const struct aiScene *sc, const aiNode* nd)
     {
       //aiGetMaterialString(sc->mMaterials[mesh->mMaterialIndex],AI_MATKEY_TEXTURE_DIFFUSE(0),str);
       aiGetMaterialTexture(sc->mMaterials[mesh->mMaterialIndex], aiTextureType_DIFFUSE, 0, str, 0, 0, 0, 0, 0, 0);
-
+      // sc->mMaterials[mesh->mMaterialIndex]->GetTexture(aiTextureType_DIFFUSE, 0, str);
       // See if another mesh is already using this texture, if so, just copy GLuint instead of remaking entire texture
       bool newTextureToBeLoaded = true;
       for (int x = 0; x < texturesAndPaths.size(); x++)
@@ -94,6 +96,7 @@ Model::recursiveTextureLoad(const struct aiScene *sc, const aiNode* nd)
 
       if (newTextureToBeLoaded)
       {
+        std::cout << "loading tex file: " << str->data << std::endl;
         FREE_IMAGE_FORMAT formato = FreeImage_GetFileType(str->data, 0);
         //Automatocally detects the format(from over 20 formats!)
         FIBITMAP* imagen = FreeImage_Load(formato, str->data);
@@ -102,7 +105,7 @@ Model::recursiveTextureLoad(const struct aiScene *sc, const aiNode* nd)
         FreeImage_Unload(temp);
         int w = FreeImage_GetWidth(imagen);
         int h = FreeImage_GetHeight(imagen);
-
+        std::cout << "width, height = " << w << ", " << h << std::endl;
         //Some debugging code
         char* pixeles = (char*) FreeImage_GetBits(imagen);
         //FreeImage loads in BGR format, so you need to swap some bytes(Or use GL_BGR).
@@ -110,7 +113,7 @@ Model::recursiveTextureLoad(const struct aiScene *sc, const aiNode* nd)
         TextureAndPath newTexture;
         newTexture.pathName = *str;
         glGenTextures(1, &newTexture.hTexture);
-
+        std::cout << "newtexture=  " << newTexture.hTexture << std::endl;
         glBindTexture(GL_TEXTURE_2D, newTexture.hTexture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, (GLvoid*) pixeles);
         //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -136,8 +139,10 @@ Model::recursiveTextureLoad(const struct aiScene *sc, const aiNode* nd)
   }
 
   // Get textures from all children
-  for (n = 0; n < nd->mNumChildren; ++n)
+  for (n = 0; n < nd->mNumChildren; ++n) {
+    std::cout << "textureLoad recursion (child no " << n << ")\n";
     recursiveTextureLoad(sc, nd->mChildren[n]);
+  }
 }
 
 void
@@ -185,7 +190,7 @@ Model::get_bounding_box(aiVector3D* min, aiVector3D* max) const
 }
 
 void
-Model::recursive_render(const struct aiScene *sc, const aiNode* nd) const
+Model::recursive_render(const struct aiScene *sc, const aiNode* nd, const int j) const
 {
   int i;
   unsigned int n = 0, t;
@@ -199,10 +204,11 @@ Model::recursive_render(const struct aiScene *sc, const aiNode* nd) const
   // draw all meshes assigned to this node
   for (; n < nd->mNumMeshes; ++n)
   {
+    glEnable(GL_TEXTURE_2D);
     const struct aiMesh* mesh = sc->mMeshes[nd->mMeshes[n]];
 
     if (n < texturesAndPaths.size())
-      glBindTexture(GL_TEXTURE_2D, texturesAndPaths[n].hTexture);
+      glBindTexture(GL_TEXTURE_2D, texturesAndPaths[j].hTexture);
 
     apply_material(sc->mMaterials[mesh->mMaterialIndex]);
 
@@ -257,7 +263,7 @@ Model::recursive_render(const struct aiScene *sc, const aiNode* nd) const
 
   // draw all children
   for (n = 0; n < nd->mNumChildren; ++n)
-    recursive_render(sc, nd->mChildren[n]);
+    recursive_render(sc, nd->mChildren[n], n);
 
   glPopMatrix();
 }
@@ -265,7 +271,7 @@ Model::recursive_render(const struct aiScene *sc, const aiNode* nd) const
 void
 Model::Draw() const
 {
-  recursive_render(scene, scene->mRootNode);
+  recursive_render(scene, scene->mRootNode, 0);
 }
 
 void
@@ -343,10 +349,12 @@ apply_material(const struct aiMaterial *mtl)
   glPolygonMode(GL_FRONT_AND_BACK, fill_mode);
 
   max = 1;
-  if ((AI_SUCCESS == aiGetMaterialIntegerArray(mtl, AI_MATKEY_TWOSIDED, &two_sided, &max)) && two_sided)
+  if ((AI_SUCCESS == aiGetMaterialIntegerArray(mtl, AI_MATKEY_TWOSIDED, &two_sided, &max)) && two_sided) {
     glEnable (GL_CULL_FACE);
-  else
+  }
+  else {
     glDisable(GL_CULL_FACE);
+  }
 }
 
 void

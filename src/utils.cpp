@@ -36,6 +36,7 @@
 
 #include <object_recognition_renderer/renderer.h>
 #include <object_recognition_renderer/utils.h>
+#include "opencv2/imgproc/imgproc.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -51,7 +52,9 @@ RendererIterator::RendererIterator(Renderer *renderer, size_t n_points)
       radius_min_(0.4),
       radius_max_(0.8),
       radius_step_(0.2),
-      radius_(radius_min_)
+      radius_(radius_min_),
+      ignore_neg_z_(false),
+      is_z_symmetric_(false)
 {
 }
 
@@ -82,16 +85,30 @@ RendererIterator::operator++()
 void
 RendererIterator::render(cv::Mat &image_out, cv::Mat &depth_out, cv::Mat &mask_out, cv::Rect &rect_out)
 {
+  cv::Vec3d t, up;
+  while (!isDone()) {
+    view_params(t, up);
+    if (ignore_neg_z_ && t(2) < 0) {
+      ++(*this);
+    } else {
+      break;
+    }
+  }
   if (isDone())
     return;
-
-  cv::Vec3d t, up;
-  view_params(t, up);
 
   renderer_->lookAt(t(0), t(1), t(2), up(0), up(1), up(2));
   //renderer_->render(image_out, depth_out, mask_out, rect_out);
   renderer_->renderDepthOnly(depth_out, mask_out, rect_out);
   renderer_->renderImageOnly(image_out, rect_out);
+
+  // NOTE:arpit flip everything vertically! (framebuffer origin is bottom left)
+  // cv::flip(depth_out, depth_out, 1);
+  // cv::flip(image_out, image_out, 1);
+  // cv::flip(mask_out, mask_out, 1);
+
+  // NOTE:arpit apply gaussian blur to rgb
+  // cv::GaussianBlur(image_out, image_out, cv::Size(3,3), 0, 0);
 }
 
 /**
@@ -107,7 +124,7 @@ RendererIterator::render(cv::Mat &image_out, cv::Mat &depth_out, cv::Mat &mask_o
 {
   renderer_->lookAt(t(0), t(1), t(2), up(0), up(1), up(2));
   renderer_->renderDepthOnly(depth_out, mask_out, rect_out);
-  renderer_->renderImageOnly(image_out, rect_out);
+  renderer_->renderImageOnly(image_out, rect_out);  
 }
 
 /**
@@ -186,6 +203,7 @@ RendererIterator::R_obj() const
   up = t.cross(y);
   normalize_vector(up(0), up(1), up(2));
 
+  // NOTE:arpit removing negations in first 2 rows.
   cv::Mat R_full = (cv::Mat_<double>(3, 3) <<
                     -y(0), -y(1), -y(2),
                     -up(0), -up(1), -up(2),
@@ -248,6 +266,15 @@ RendererIterator::view_params(cv::Vec3d &T, cv::Vec3d &up) const
   float x = std::cos(phi) * r;
   float z = std::sin(phi) * r;
 
+  // NOTE:arpit if z symmetric, generate different x,y,z
+  // x = 0, y, z = non zero
+  if (is_z_symmetric_) {
+    y = 0;
+    double angle = (index_/(double)n_points_)*CV_PI;
+    z = cos(angle);
+    x = sin(angle);
+  }
+
   float lat = std::acos(z), lon;
   if ((fabs(std::sin(lat)) < 1e-5) || (fabs(y / std::sin(lat)) > 1))
     lon = 0;
@@ -259,7 +286,6 @@ RendererIterator::view_params(cv::Vec3d &T, cv::Vec3d &up) const
   z *= radius_; //float z = radius * cos(lat);
 
   T = cv::Vec3d(x, y, z);
-
   // Figure out the up vector
   float x_up = radius_ * std::cos(lon) * std::sin(lat - 1e-5) - x;
   float y_up = radius_ * std::sin(lon) * std::sin(lat - 1e-5) - y;
@@ -284,5 +310,7 @@ RendererIterator::view_params(cv::Vec3d &T, cv::Vec3d &up) const
   normalize_vector(l(0),l(1),l(2));
 
   up = T.cross(l);  // cross product
+  //NOTE:arpit inverting up vector
+  up = -up;
   normalize_vector(up(0), up(1), up(2));
 }

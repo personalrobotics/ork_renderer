@@ -110,6 +110,7 @@ Renderer3d::set_parameters(size_t width, size_t height, double focal_length_x, d
   //glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
   //glEnable(GL_COLOR_MATERIAL);
 
+
   GLfloat LightAmbient[]= { 0.5f, 0.5f, 0.5f, 1.0f };
   GLfloat LightDiffuse[]= { 1.0f, 1.0f, 1.0f, 1.0f };
   GLfloat LightPosition[]= { 0.0f, 0.0f, 15.0f, 1.0f };

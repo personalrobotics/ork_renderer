@@ -358,6 +358,7 @@ void ObjFileParser::getFace(aiPrimitiveType type)
 	// Assign face to mesh
 	if ( NULL == m_pModel->m_pCurrentMesh )
 	{
+		DefaultLogger::get()->error("calling creatMesh from getFace");
 		createMesh();
 	}
 	
@@ -383,8 +384,10 @@ void ObjFileParser::getMaterialDesc()
 	if (m_pModel->m_pCurrent != NULL &&
 		(	m_pModel->m_pCurrent->m_Meshes.size() > 1 ||
 			(m_pModel->m_pCurrent->m_Meshes.size() == 1 && m_pModel->m_Meshes[m_pModel->m_pCurrent->m_Meshes[0]]->m_Faces.size() != 0)	)
-		)
+		) {
+		DefaultLogger::get()->error("setting this shit NULL.");
 		m_pModel->m_pCurrent = NULL;
+	}
 
 	// Get next data for material data
 	m_DataIt = getNextToken<DataArrayIt>(m_DataIt, m_DataItEnd);
@@ -414,6 +417,7 @@ void ObjFileParser::getMaterialDesc()
 		m_pModel->m_pCurrentMaterial = (*it).second;
 		if ( needsNewMesh( strName ))
 		{
+			DefaultLogger::get()->error("calling creatMesh from getMaterialDesc");
 			createMesh();	
 		}
 		m_pModel->m_pCurrentMesh->m_uiMaterialIndex = getMaterialIndex( strName );
@@ -499,6 +503,7 @@ void ObjFileParser::getNewMaterial()
 		// Set new material
 		if ( needsNewMesh( strMat ) )
 		{
+			DefaultLogger::get()->error("calling creatMesh from getNewMaterial");
 			createMesh();	
 		}
 		m_pModel->m_pCurrentMesh->m_uiMaterialIndex = getMaterialIndex( strMat );
@@ -616,7 +621,7 @@ void ObjFileParser::createObject(const std::string &strObjectName)
 {
 	ai_assert( NULL != m_pModel );
 	//ai_assert( !strObjectName.empty() );
-
+	DefaultLogger::get()->error("createObject called!");
 	m_pModel->m_pCurrent = new ObjFile::Object;
 	m_pModel->m_pCurrent->m_strObjName = strObjectName;
 	m_pModel->m_Objects.push_back( m_pModel->m_pCurrent );

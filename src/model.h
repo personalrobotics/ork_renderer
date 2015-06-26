@@ -60,7 +60,7 @@ private:
   void
   recursiveTextureLoad(const struct aiScene *sc, const struct aiNode* nd);
   void
-  recursive_render(const struct aiScene *sc, const struct aiNode* nd) const;
+  recursive_render(const struct aiScene *sc, const struct aiNode* nd, int n) const;
 
   void
   get_bounding_box_for_node(const aiNode* nd, aiVector3D* min, aiVector3D* max, aiMatrix4x4* trafo) const;

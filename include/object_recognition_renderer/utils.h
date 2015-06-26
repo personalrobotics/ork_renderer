@@ -164,7 +164,11 @@ public:
   int angle_min_, angle_max_, angle_step_, angle_;
   /** Values for the scale sampling */
   float radius_min_, radius_max_, radius_step_, radius_;
-
+  /* if true, ignore points on sphere with negative z coordinate */
+  bool ignore_neg_z_;
+  // NOTE:arpit adding param for objects rotationally symmetric about the 
+  // z axis.
+  bool is_z_symmetric_;
 private:
   /**
    * @param T the translation vector
