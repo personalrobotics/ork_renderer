@@ -113,6 +113,7 @@ Model::recursiveTextureLoad(const struct aiScene *sc, const aiNode* nd)
         TextureAndPath newTexture;
         newTexture.pathName = *str;
         glGenTextures(1, &newTexture.hTexture);
+        GLenum huboError = glGetError();
         std::cout << "newtexture=  " << newTexture.hTexture << std::endl;
         glBindTexture(GL_TEXTURE_2D, newTexture.hTexture);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_BGRA_EXT, GL_UNSIGNED_BYTE, (GLvoid*) pixeles);
@@ -124,7 +125,6 @@ Model::recursiveTextureLoad(const struct aiScene *sc, const aiNode* nd)
 
         glBindTexture(GL_TEXTURE_2D, newTexture.hTexture);
 
-        GLenum huboError = glGetError();
 
         if (huboError)
         {

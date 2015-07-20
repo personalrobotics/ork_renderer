@@ -103,9 +103,9 @@ RendererIterator::render(cv::Mat &image_out, cv::Mat &depth_out, cv::Mat &mask_o
   renderer_->renderImageOnly(image_out, rect_out);
 
   // NOTE:arpit flip everything vertically! (framebuffer origin is bottom left)
-  // cv::flip(depth_out, depth_out, 1);
-  // cv::flip(image_out, image_out, 1);
-  // cv::flip(mask_out, mask_out, 1);
+  // cv::flip(depth_out, depth_out, 0);
+  // cv::flip(image_out, image_out, 0);
+  // cv::flip(mask_out, mask_out, 0);
 
   // NOTE:arpit apply gaussian blur to rgb
   // cv::GaussianBlur(image_out, image_out, cv::Size(3,3), 0, 0);
@@ -139,6 +139,13 @@ RendererIterator::renderDepthOnly(cv::Mat &depth_out, cv::Mat &mask_out, cv::Rec
 {
   renderer_->lookAt(t(0), t(1), t(2), up(0), up(1), up(2));
   renderer_->renderDepthOnly(depth_out, mask_out, rect_out);
+  // NOTE:arpit flipping vertically (this method is called by linemod detector)
+  // cv::flip(depth_out, depth_out, 0);
+  // cv::flip(mask_out, mask_out, 0);
+  // NOTE:arpit setting to mid value
+
+  // depth_out.setTo(cv::Scalar(0));
+
 }
 
 /**
@@ -152,6 +159,8 @@ RendererIterator::renderImageOnly(cv::Mat &image_out, const cv::Rect &rect_out, 
 {
   renderer_->lookAt(t(0), t(1), t(2), up(0), up(1), up(2));
   renderer_->renderImageOnly(image_out, rect_out);
+  // NOTE:arpit flipping vertically (this is method is called by  linemod dtector debugging only)
+  // cv::flip(image_out, image_out, 0);
 }
 
 
@@ -211,9 +220,11 @@ RendererIterator::R_obj() const
                     );
 
   cv::Matx33d R = R_full;
+  // NOTE:arpit just return R
   R = R.t();
 
   return R.inv();
+  // return R;
 }
 
 /**

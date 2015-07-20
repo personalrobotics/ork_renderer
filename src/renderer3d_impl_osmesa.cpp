@@ -36,7 +36,8 @@
 #include "renderer3d_impl_osmesa.h"
 
 #include <cstdlib>
-
+#include <stdio.h>
+ 
 /**
  * @param file_path the path of the mesh file
  */
@@ -65,7 +66,8 @@ void
 Renderer3dImpl::set_parameters_low_level()
 {
   ctx_ = OSMesaCreateContextExt(OSMESA_RGB, 32, 0, 0, NULL);
-
+   if (!ctx_) { printf("OSMesaCreateContextExt() failed!\n");}
+  printf("creating osmesa context!\n");
   ctx_buffer_ = malloc(width_ * height_ * 3 * sizeof(GLubyte));
   OSMesaMakeCurrent(ctx_, ctx_buffer_, GL_UNSIGNED_BYTE, width_, height_);
 }
